@@ -1,5 +1,5 @@
 import numpy as np
-from enum import Enum
+from enum import Enum, auto
 
 
 class CellAssignment(Enum):
@@ -7,6 +7,9 @@ class CellAssignment(Enum):
     EMPTY = 0
     USER = 1
 
+class GameSymbol(Enum):
+    X = auto()
+    O = auto()
 
 class GameGrid():
 
@@ -18,7 +21,6 @@ class GameGrid():
         self.grid_size = grid_dimensions
         self.grid: np.array = self.__initialize_grid(grid_dimensions)
         self.sums_grid: np.array = self.__initialize_grid(grid_dimensions)
-        self.mean_grid: np.array = self.__initialize_grid(grid_dimensions)
 
     def __initialize_grid(self, grid_dimensions=3) -> np.array:
         return np.zeros((grid_dimensions, grid_dimensions), dtype=int)
@@ -28,7 +30,7 @@ class GameGrid():
         horizontal_sep = '----+---+----\n'
         return horizontal_sep.join(rows)
 
-    def __update_grid_stats(self) -> None:
+    def __compute_sums_of_grid(self) -> np.ndarray:
         # sums array of the game board as follows:
         # [row0, row1,  row2]
         # [col0, col1,  col2]
@@ -38,9 +40,7 @@ class GameGrid():
         sums[1] = self.grid.sum(axis=1)
         sums[2][0] = np.sum(self.grid.diagonal())
         sums[2][1] = np.sum(np.fliplr(self.grid).diagonal())
-
-        self.sums_grid = sums
-        self.mean_grid = sums/self.grid_size
+        return sums
 
     def update_cell(self, cell_number: int, cell_value: int) -> None:
         if type(cell_number) != int or cell_number < 1 or cell_number > self.grid_size ** 2:
@@ -55,19 +55,17 @@ class GameGrid():
             raise Exception('Selected cell already occupied.')
 
         self.grid[row][col] = cell_value
-        self.__update_grid_stats()
+        self.sums_grid = self.__compute_sums_of_grid()
 
     def determine_winner(self) -> int:
-        # Draw is 0
-        # User is 1
-        # CPU  is -1
-        winner = 0
-        winner += int(np.any(self.mean_grid == CellAssignment.USER.value))
-        winner -= int(np.any(self.mean_grid == CellAssignment.CPU.value))
-        return winner
+        mean_grid = self.sums_grid / self.grid_size
+        winner = CellAssignment.EMPTY.value
+        winner += int(np.any(mean_grid == CellAssignment.USER.value))
+        winner -= int(np.any(mean_grid == CellAssignment.CPU.value))
+        return CellAssignment[winner]
 
     def is_game_over(self) -> bool:
-        return np.all(self.grid != CellAssignment.EMPTY.value)
+        return np.all(self.grid != CellAssignment.EMPTY.value) or np.any(np.abs(self.sums_grid) == self.grid_size)
 
 
 class CPU():
@@ -75,7 +73,7 @@ class CPU():
     def __init__(self, grid) -> None:
         self.__grid: GameGrid = grid
 
-    def get_move(self):  # -> Tuple(int, int):
+    def get_move(self):
         mid = self.__grid.grid_size // 2
         if self.__grid[mid][mid] == CellAssignment.EMPTY.value:
             return (mid, mid)
@@ -85,7 +83,10 @@ class GameManager():
 
     def __init__(self, grid, cpu) -> None:
         self.__grid = grid
-        self.display_grid()
+        self.__cpu = cpu
+
+        self.player_symbol = self.__get_player_symbol()
+        self.cpu_symbol = GameSymbol.O if self.player_symbol == GameSymbol.X else GameSymbol.X
 
     def clear_display(self):
         print("\033[H\033[J", end="")
@@ -96,7 +97,7 @@ class GameManager():
     def display_grid(self):
         print(self.__grid)
 
-    def get_user_input(self, prompt: str, expected_type=str):
+    def __get_user_input(self, prompt: str, expected_type=str):
         user_input = None
         while not user_input:
             try:
@@ -105,11 +106,14 @@ class GameManager():
                 print('Invalid input type.')
         return user_input
 
+    def __get_player_symbol(self):
+        symbol = self.__get_user_input('Would you like to be X or O? ').upper()
+        return GameSymbol.X if len(symbol) > 0 and symbol[0] == GameSymbol.X.name else GameSymbol.O    
+
     def run(self):
         self.clear_display()
         self.display_header()
-
-        symbol = self.get_user_input('Would you like to be X or O? ')
+        self.display_grid()
 
         while not self.__grid.is_game_over():
             selection = int(input('Select a cell to place X: '))
