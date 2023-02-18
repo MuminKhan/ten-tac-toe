@@ -1,10 +1,11 @@
 import numpy as np
 from enum import Enum
 
-class Actor(Enum):
-    CPU   = -1
-    Empty =  0
-    USER  =  1
+
+class CellAssignment(Enum):
+    CPU = -1
+    EMPTY = 0
+    USER = 1
 
 
 class GameGrid():
@@ -50,7 +51,7 @@ class GameGrid():
         row = self.grid_size - 1 - row
         col = col
 
-        if self.grid[row][col] != 0:
+        if self.grid[row][col] != CellAssignment.EMPTY.value:
             raise Exception('Selected cell already occupied.')
 
         self.grid[row][col] = cell_value
@@ -61,12 +62,12 @@ class GameGrid():
         # User is 1
         # CPU  is -1
         winner = 0
-        winner += int(np.any(self.mean_grid == 1))
-        winner -= int(np.any(self.mean_grid == -1))
+        winner += int(np.any(self.mean_grid == CellAssignment.USER.value))
+        winner -= int(np.any(self.mean_grid == CellAssignment.CPU.value))
         return winner
 
     def is_game_over(self) -> bool:
-        return np.all(self.grid != 0)
+        return np.all(self.grid != CellAssignment.EMPTY.value)
 
 
 class CPU():
@@ -74,9 +75,9 @@ class CPU():
     def __init__(self, grid) -> None:
         self.__grid: GameGrid = grid
 
-    def get_move(self): #-> Tuple(int, int):
+    def get_move(self):  # -> Tuple(int, int):
         mid = self.__grid.grid_size // 2
-        if self.__grid[mid][mid] == 0:
+        if self.__grid[mid][mid] == CellAssignment.EMPTY.value:
             return (mid, mid)
 
 
@@ -112,7 +113,7 @@ class GameManager():
 
         while not self.__grid.is_game_over():
             selection = int(input('Select a cell to place X: '))
-            self.__grid.update_cell(selection, 1)
+            self.__grid.update_cell(selection, CellAssignment.USER.value)
 
             self.clear_display()
             self.display_header()
