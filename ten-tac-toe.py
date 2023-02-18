@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 class CellAssignment(Enum):
     CPU = -1
-    EMPTY = 0
+    NOBODY = 0
     USER = 1
 
 class GameSymbol(Enum):
@@ -51,7 +51,7 @@ class GameGrid():
         row = self.grid_size - 1 - row
         col = col
 
-        if self.grid[row][col] != CellAssignment.EMPTY.value:
+        if self.grid[row][col] != CellAssignment.NOBODY.value:
             raise Exception('Selected cell already occupied.')
 
         self.grid[row][col] = cell_value
@@ -59,13 +59,13 @@ class GameGrid():
 
     def determine_winner(self) -> int:
         mean_grid = self.sums_grid / self.grid_size
-        winner = CellAssignment.EMPTY.value
+        winner = CellAssignment.NOBODY.value
         winner += int(np.any(mean_grid == CellAssignment.USER.value))
         winner -= int(np.any(mean_grid == CellAssignment.CPU.value))
-        return CellAssignment[winner]
+        return CellAssignment(winner)
 
     def is_game_over(self) -> bool:
-        return np.all(self.grid != CellAssignment.EMPTY.value) or np.any(np.abs(self.sums_grid) == self.grid_size)
+        return np.all(self.grid != CellAssignment.NOBODY.value) or np.any(np.abs(self.sums_grid) == self.grid_size)
 
 
 class CPU():
@@ -75,7 +75,7 @@ class CPU():
 
     def get_move(self):
         mid = self.__grid.grid_size // 2
-        if self.__grid[mid][mid] == CellAssignment.EMPTY.value:
+        if self.__grid[mid][mid] == CellAssignment.NOBODY.value:
             return (mid, mid)
 
 
@@ -122,6 +122,16 @@ class GameManager():
             self.clear_display()
             self.display_header()
             self.display_grid()
+
+        winner = self.__grid.determine_winner()
+        if winner == CellAssignment.USER:
+            winner = 'You'
+        elif winner == CellAssignment.CPU:
+            winner = 'CPU'
+        else:
+            winner = 'No one'
+
+        print(f'{winner} won!')
 
 
 if __name__ == '__main__':
