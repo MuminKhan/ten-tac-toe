@@ -1,15 +1,19 @@
-import numpy as np
 from enum import Enum, auto
+from typing import Tuple
+
+import numpy as np
 
 
-class CellAssignment(Enum):
+class GameEntity(Enum):
     CPU = -1
     NOBODY = 0
     USER = 1
 
+
 class GameSymbol(Enum):
     X = auto()
     O = auto()
+
 
 class GameGrid():
 
@@ -42,16 +46,8 @@ class GameGrid():
         sums[2][1] = np.sum(np.fliplr(self.grid).diagonal())
         return sums
 
-    def update_cell(self, cell_number: int, cell_value: int) -> None:
-        if type(cell_number) != int or cell_number < 1 or cell_number > self.grid_size ** 2:
-            raise Exception('Invalid input cell selection input.')
-
-        cell_number -= 1
-        row, col = divmod(cell_number, self.grid_size)
-        row = self.grid_size - 1 - row
-        col = col
-
-        if self.grid[row][col] != CellAssignment.NOBODY.value:
+    def update_cell(self, row: int, col: int, cell_value: int) -> None:
+        if self.grid[row][col] != GameEntity.NOBODY.value:
             raise Exception('Selected cell already occupied.')
 
         self.grid[row][col] = cell_value
@@ -59,13 +55,13 @@ class GameGrid():
 
     def determine_winner(self) -> int:
         mean_grid = self.sums_grid / self.grid_size
-        winner = CellAssignment.NOBODY.value
-        winner += int(np.any(mean_grid == CellAssignment.USER.value))
-        winner -= int(np.any(mean_grid == CellAssignment.CPU.value))
-        return CellAssignment(winner)
+        winner = GameEntity.NOBODY.value
+        winner += int(np.any(mean_grid == GameEntity.USER.value))
+        winner -= int(np.any(mean_grid == GameEntity.CPU.value))
+        return GameEntity(winner)
 
     def is_game_over(self) -> bool:
-        return np.all(self.grid != CellAssignment.NOBODY.value) or np.any(np.abs(self.sums_grid) == self.grid_size)
+        return np.all(self.grid != GameEntity.NOBODY.value) or np.any(np.abs(self.sums_grid) == self.grid_size)
 
 
 class CPU():
@@ -75,7 +71,7 @@ class CPU():
 
     def get_move(self):
         mid = self.__grid.grid_size // 2
-        if self.__grid[mid][mid] == CellAssignment.NOBODY.value:
+        if self.__grid[mid][mid] == GameEntity.NOBODY.value:
             return (mid, mid)
 
 
@@ -108,29 +104,45 @@ class GameManager():
 
     def __get_player_symbol(self):
         symbol = self.__get_user_input('Would you like to be X or O? ').upper()
-        return GameSymbol.X if len(symbol) > 0 and symbol[0] == GameSymbol.X.name else GameSymbol.O    
+        return GameSymbol.X if len(symbol) > 0 and symbol[0] == GameSymbol.X.name else GameSymbol.O
+
+    def __cell_to_row_col(self, cell_number: int) -> Tuple[int, int]:
+        grid_size = self.__grid.grid_size
+        if type(cell_number) != int or cell_number < 1 or cell_number > grid_size ** 2:
+            raise Exception('Invalid input cell selection input.')
+        cell_number -= 1
+        row, col = divmod(cell_number, grid_size)
+        row = grid_size - 1 - row
+        return (row, col)
 
     def run(self):
         self.clear_display()
         self.display_header()
         self.display_grid()
 
+        turn = GameEntity.USER if self.player_symbol == GameSymbol.X else GameEntity.CPU
         while not self.__grid.is_game_over():
-            selection = int(input('Select a cell to place X: '))
-            self.__grid.update_cell(selection, CellAssignment.USER.value)
+            if turn == GameEntity.USER:
+                selection = int(input('Select a cell to place X: '))
+                row, col = self.__cell_to_row_col(selection)
+                self.__grid.update_cell(row, col, GameEntity.USER.value)
+                turn = GameEntity.CPU
+            elif turn == GameEntity.CPU:
+                row, col = self.__cpu.get_move()
+                self.__grid.update_cell(row, col, GameEntity.CPU.value)
+                turn = GameEntity.USER
 
             self.clear_display()
             self.display_header()
             self.display_grid()
 
         winner = self.__grid.determine_winner()
-        if winner == CellAssignment.USER:
+        if winner == GameEntity.USER:
             winner = 'You'
-        elif winner == CellAssignment.CPU:
+        elif winner == GameEntity.CPU:
             winner = 'CPU'
         else:
             winner = 'No one'
-
         print(f'{winner} won!')
 
 
