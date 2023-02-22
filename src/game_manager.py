@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Tuple
 
 import numpy as np
@@ -28,11 +29,12 @@ class GameManager():
         print('***** TEN! TAC! TOE! *****\n')
 
     def display_grid(self):
+        side_padding = 8
         grid_to_display = self.__display_grids[GameEntity.NOBODY]
         grid_to_display = np.where(self.__grid.grid == GameEntity.USER.value, self.__display_grids[GameEntity.USER], grid_to_display)
         grid_to_display = np.where(self.__grid.grid ==  GameEntity.CPU.value,  self.__display_grids[GameEntity.CPU], grid_to_display)
-        rows = ['  {} | {} | {}  \n'.format(*row) for row in grid_to_display]
-        horizontal_sep = '----+---+----\n'
+        rows = [' '*side_padding + '{} | {} | {}  \n'.format(*row) for row in grid_to_display]
+        horizontal_sep = ' '*(side_padding-2) + '----+---+----\n'
         print(horizontal_sep.join(rows))
 
     def __get_user_input(self, prompt: str, expected_type=str):
@@ -64,6 +66,7 @@ class GameManager():
         self.display_header()
         self.display_grid()
 
+        turns_played = 0
         turn = GameEntity.USER if self.player_symbol == GameSymbol.X else GameEntity.CPU
         while not self.__grid.is_game_over():
             if turn == GameEntity.USER:
@@ -72,13 +75,18 @@ class GameManager():
                 self.__grid.update_cell(row, col, GameEntity.USER.value)
                 turn = GameEntity.CPU
             elif turn == GameEntity.CPU:
+                print('CPU is thinking...')
                 row, col = self.__cpu.get_move()
+                sleep(turns_played / 4)
                 self.__grid.update_cell(row, col, GameEntity.CPU.value)
                 turn = GameEntity.USER
+                print(f'{GameEntity.CPU.name} put {self.cpu_symbol.name} in {self.__index_to_cell_num((row, col))}')
+                sleep(1)
 
+            turns_played += 1
             self.clear_display()
             self.display_header()
             self.display_grid()
 
         winner: GameEntity = self.__grid.determine_winner()
-        print(f'{winner.name.title()} won!')
+        print(f'{winner.name} won!')
