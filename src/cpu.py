@@ -46,7 +46,7 @@ class CPU():
         CPU_winning_score  = grid.grid_size * GameEntity.CPU.value
 
         # CPU Wins / Block User Win
-        targets = list(np.argwhere(grid.sums_grid == CPU_winning_score - GameEntity.CPU.value))
+        targets =  list(np.argwhere(grid.sums_grid == CPU_winning_score - GameEntity.CPU.value))
         targets += list(np.argwhere(grid.sums_grid == user_winning_score - GameEntity.USER.value))
         for target in targets:
             move = self.__find_open_cell(*target)

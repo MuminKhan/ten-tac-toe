@@ -3,39 +3,55 @@ from typing import Tuple
 
 import numpy as np
 
+from cpu import CPU
 from enums import *
+from game_grid import GameGrid
 
 
 class GameManager():
 
     def __init__(self, grid, cpu) -> None:
-        self.__grid = grid
-        self.__cpu = cpu
+        self.__grid: GameGrid = grid
+        self.__cpu: CPU  = cpu
 
-        self.player_symbol = self.__get_player_symbol()
-        self.cpu_symbol = GameSymbol.O if self.player_symbol == GameSymbol.X else GameSymbol.X
+        self.__player_symbol: GameSymbol = None
+        self.__cpu_symbol:    GameSymbol = None
+        self.__display_grids: dict[GameEntity: np.ndarray] = None
 
+        self.__initialize_game_objects()
+
+
+    def __initialize_game_objects(self):
+        self.__clear_display()
+        self.__display_header()
+        self.__player_symbol = self.__get_player_symbol()
+        self.__cpu_symbol = GameSymbol.O if self.__player_symbol == GameSymbol.X else GameSymbol.X
         self.__display_grids = {
             GameEntity.NOBODY:  np.flipud(np.arange(1, 10, dtype=int).reshape(3, 3)),
-            GameEntity.USER:    np.full(shape=(3, 3), fill_value=self.player_symbol.name),
-            GameEntity.CPU:     np.full(
-                shape=(3, 3), fill_value=self.cpu_symbol.name)
+            GameEntity.USER:    np.full(shape=(3, 3), fill_value=self.__player_symbol.name),
+            GameEntity.CPU:     np.full(shape=(3, 3), fill_value=self.__cpu_symbol.name)
         }
+        self.__display_grid()
 
-    def clear_display(self):
+    def __clear_display(self):
         print("\033[H\033[J", end="")
 
-    def display_header(self):
-        print('***** TEN! TAC! TOE! *****\n')
+    def __display_header(self):
+        print('******* TEN! TAC! TOE! *******\n')
 
-    def display_grid(self):
-        side_padding = 8
+    def __display_grid(self):
+        side_padding = 10
         grid_to_display = self.__display_grids[GameEntity.NOBODY]
         grid_to_display = np.where(self.__grid.grid == GameEntity.USER.value, self.__display_grids[GameEntity.USER], grid_to_display)
         grid_to_display = np.where(self.__grid.grid ==  GameEntity.CPU.value,  self.__display_grids[GameEntity.CPU], grid_to_display)
         rows = [' '*side_padding + '{} | {} | {}  \n'.format(*row) for row in grid_to_display]
         horizontal_sep = ' '*(side_padding-2) + '----+---+----\n'
         print(horizontal_sep.join(rows))
+
+    def __full_display(self):
+        self.__clear_display()
+        self.__display_header()
+        self.__display_grid()
 
     def __get_user_input(self, prompt: str, expected_type=str):
         user_input = None
@@ -62,31 +78,37 @@ class GameManager():
         return grid_size * (grid_size - row - 1) + (col+1)
 
     def run(self):
-        self.clear_display()
-        self.display_header()
-        self.display_grid()
-
+        """Runs the Ten-Tac-Toe game"""
         turns_played = 0
-        turn = GameEntity.USER if self.player_symbol == GameSymbol.X else GameEntity.CPU
+        turn = GameEntity.USER if self.__player_symbol == GameSymbol.X else GameEntity.CPU
         while not self.__grid.is_game_over():
+            self.__full_display()
+
+            # User's turn
             if turn == GameEntity.USER:
-                selection = int(input(f'Select a cell to place {self.player_symbol.name}: '))
-                row, col = self.__cell_num_to_index(selection)
-                self.__grid.update_cell(row, col, GameEntity.USER.value)
+                try: 
+                    selection = int(input(f'Select a cell to place {self.__player_symbol.name}: '))
+                    row, col = self.__cell_num_to_index(selection)
+                    self.__grid.update_cell(row, col, GameEntity.USER.value)
+                except Exception:
+                    print('Invalid Selection! Please choose an empty grid number...')
+                    sleep(1)
+                    continue
                 turn = GameEntity.CPU
+
+            # CPU's turn
             elif turn == GameEntity.CPU:
                 print('CPU is thinking...')
                 row, col = self.__cpu.get_move()
                 sleep(turns_played / 4)
                 self.__grid.update_cell(row, col, GameEntity.CPU.value)
                 turn = GameEntity.USER
-                print(f'{GameEntity.CPU.name} put {self.cpu_symbol.name} in {self.__index_to_cell_num((row, col))}')
+                print(f'{GameEntity.CPU.name} put {self.__cpu_symbol.name} in {self.__index_to_cell_num((row, col))}')
                 sleep(1)
 
             turns_played += 1
-            self.clear_display()
-            self.display_header()
-            self.display_grid()
-
+        
+        # End Game
+        self.__full_display()
         winner: GameEntity = self.__grid.determine_winner()
         print(f'{winner.name} won!')
