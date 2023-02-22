@@ -1,5 +1,7 @@
 from typing import Tuple
 
+import numpy as np
+
 from enums import *
 
 
@@ -12,6 +14,13 @@ class GameManager():
         self.player_symbol = self.__get_player_symbol()
         self.cpu_symbol = GameSymbol.O if self.player_symbol == GameSymbol.X else GameSymbol.X
 
+        self.__display_grids = {
+            GameEntity.NOBODY:  np.flipud(np.arange(1, 10, dtype=int).reshape(3, 3)),
+            GameEntity.USER:    np.full(shape=(3, 3), fill_value=self.player_symbol.name),
+            GameEntity.CPU:     np.full(
+                shape=(3, 3), fill_value=self.cpu_symbol.name)
+        }
+
     def clear_display(self):
         print("\033[H\033[J", end="")
 
@@ -19,10 +28,10 @@ class GameManager():
         print('***** TEN! TAC! TOE! *****\n')
 
     def display_grid(self):
-        rows = []
-        for i in range(self.__grid.grid_size-1, -1, -1):
-            cells = [n for n in range((3*i)+1, (3*i)+4)]
-            rows.append('  {} | {} | {}  \n'.format(*cells))
+        grid_to_display = self.__display_grids[GameEntity.NOBODY]
+        grid_to_display = np.where(self.__grid.grid == GameEntity.USER.value, self.__display_grids[GameEntity.USER], grid_to_display)
+        grid_to_display = np.where(self.__grid.grid ==  GameEntity.CPU.value,  self.__display_grids[GameEntity.CPU], grid_to_display)
+        rows = ['  {} | {} | {}  \n'.format(*row) for row in grid_to_display]
         horizontal_sep = '----+---+----\n'
         print(horizontal_sep.join(rows))
 
@@ -39,14 +48,16 @@ class GameManager():
         symbol = self.__get_user_input('Would you like to be X or O? ').upper()
         return GameSymbol.X if len(symbol) > 0 and symbol[0] == GameSymbol.X.name else GameSymbol.O
 
-    def __cell_to_row_col(self, cell_number: int) -> Tuple[int, int]:
+    def __cell_num_to_index(self, cell_number: int) -> Tuple[int, int]:
         grid_size = self.__grid.grid_size
-        if type(cell_number) != int or cell_number < 1 or cell_number > grid_size ** 2:
-            raise Exception('Invalid input cell selection input.')
-        cell_number -= 1
-        row, col = divmod(cell_number, grid_size)
+        row, col = divmod(cell_number - 1, grid_size)
         row = grid_size - 1 - row
         return (row, col)
+
+    def __index_to_cell_num(self, index: Tuple[int, int]) -> int:
+        grid_size = self.__grid.grid_size
+        row, col = index
+        return grid_size * (grid_size - row - 1) + (col+1)
 
     def run(self):
         self.clear_display()
@@ -57,7 +68,7 @@ class GameManager():
         while not self.__grid.is_game_over():
             if turn == GameEntity.USER:
                 selection = int(input('Select a cell to place X: '))
-                row, col = self.__cell_to_row_col(selection)
+                row, col = self.__cell_num_to_index(selection)
                 self.__grid.update_cell(row, col, GameEntity.USER.value)
                 turn = GameEntity.CPU
             elif turn == GameEntity.CPU:
@@ -69,5 +80,5 @@ class GameManager():
             self.display_header()
             self.display_grid()
 
-        winner:GameEntity = self.__grid.determine_winner()
+        winner: GameEntity = self.__grid.determine_winner()
         print(f'{winner.name.title()} won!')
