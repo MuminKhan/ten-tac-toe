@@ -28,8 +28,8 @@ class GameGrid():
         # [col0, col1,  col2]
         # [diag, antidiag, 0]
         sums = np.zeros((self.grid_size, self.grid_size), dtype=int)
-        sums[0] = self.grid.sum(axis=0)
-        sums[1] = self.grid.sum(axis=1)
+        sums[0] = self.grid.sum(axis=1)
+        sums[1] = self.grid.sum(axis=0)
         sums[2][0] = np.sum(self.grid.diagonal())
         sums[2][1] = np.sum(np.fliplr(self.grid).diagonal())
         return sums
