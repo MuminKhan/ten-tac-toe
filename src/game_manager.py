@@ -67,7 +67,7 @@ class GameManager():
         turn = GameEntity.USER if self.player_symbol == GameSymbol.X else GameEntity.CPU
         while not self.__grid.is_game_over():
             if turn == GameEntity.USER:
-                selection = int(input('Select a cell to place X: '))
+                selection = int(input(f'Select a cell to place {self.player_symbol.name}: '))
                 row, col = self.__cell_num_to_index(selection)
                 self.__grid.update_cell(row, col, GameEntity.USER.value)
                 turn = GameEntity.CPU
