@@ -63,8 +63,15 @@ class GameManager():
         return user_input
 
     def __get_player_symbol(self):
-        symbol = self.__get_user_input('Would you like to be X or O? ').upper()
-        return GameSymbol.X if len(symbol) > 0 and symbol[0] == GameSymbol.X.name else GameSymbol.O
+        user_symbol = None
+        available_symbols = {symbol.name for symbol in GameSymbol}
+        while user_symbol is None:
+            symbol = self.__get_user_input('Would you like to be X or O? ').upper()
+
+            if len(symbol) > 0 and symbol[0] in available_symbols:
+                user_symbol = GameSymbol.X if len(symbol) > 0 and symbol[0] == GameSymbol.X.name else GameSymbol.O
+
+        return user_symbol
 
     def __cell_num_to_index(self, cell_number: int) -> Tuple[int, int]:
         grid_size = self.__grid.grid_size
