@@ -22,14 +22,16 @@ class GameManager():
 
 
     def __initialize_game_objects(self):
+        grid_size = self.__grid.grid_size
+
         self.__clear_display()
         self.__display_header()
         self.__player_symbol = self.__get_player_symbol()
         self.__cpu_symbol = GameSymbol.O if self.__player_symbol == GameSymbol.X else GameSymbol.X
         self.__display_grids = {
-            GameEntity.NOBODY:  np.flipud(np.arange(1, 10, dtype=int).reshape(3, 3)),
-            GameEntity.USER:    np.full(shape=(3, 3), fill_value=self.__player_symbol.name),
-            GameEntity.CPU:     np.full(shape=(3, 3), fill_value=self.__cpu_symbol.name)
+            GameEntity.NOBODY:  np.flipud(np.arange(1, (grid_size**2)+1, dtype=int).reshape(grid_size, grid_size)),
+            GameEntity.USER:    np.full(shape=(grid_size, grid_size), fill_value=self.__player_symbol.name),
+            GameEntity.CPU:     np.full(shape=(grid_size, grid_size), fill_value=self.__cpu_symbol.name)
         }
         self.__display_grid()
 

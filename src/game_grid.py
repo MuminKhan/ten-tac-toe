@@ -6,7 +6,7 @@ from enums import *
 class GameGrid():
 
     def __init__(self, grid_dimensions=3) -> None:
-
+        # Proper diagonals cannot be made with even grid lengths. 
         if grid_dimensions % 2 != 1:
             raise Exception('Grid size must be odd.')
 
@@ -14,7 +14,7 @@ class GameGrid():
         self.grid: np.array = self.__initialize_grid(grid_dimensions)
         self.sums_grid: np.array = self.__initialize_grid(grid_dimensions)
 
-    def __initialize_grid(self, grid_dimensions=3) -> np.array:
+    def __initialize_grid(self, grid_dimensions) -> np.array:
         return np.zeros((grid_dimensions, grid_dimensions), dtype=int)
 
     def __str__(self) -> str:
