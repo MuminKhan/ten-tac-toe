@@ -85,12 +85,22 @@ class GameManager():
         grid_size = self.__grid.grid_size
         row, col = index
         return grid_size * (grid_size - row - 1) + (col+1)
+    
+    def __determine_winner(self) -> int:
+        mean_grid = self.__grid.sums_grid / self.__grid.grid_size
+        winner = GameEntity.NOBODY.value
+        winner += int(np.any(mean_grid == GameEntity.USER.value))
+        winner -= int(np.any(mean_grid == GameEntity.CPU.value))
+        return GameEntity(winner)
+
+    def __is_game_over(self) -> bool:
+        return np.all(self.__grid.grid != GameEntity.NOBODY.value) or np.any(np.abs(self.__grid.sums_grid) == self.__grid.grid_size)
 
     def run(self):
         """Runs the Ten-Tac-Toe game"""
         turns_played = 0
         turn = GameEntity.USER if self.__player_symbol == GameSymbol.X else GameEntity.CPU
-        while not self.__grid.is_game_over():
+        while not self.__is_game_over():
             self.__full_display()
 
             # User's turn
@@ -119,5 +129,5 @@ class GameManager():
         
         # End Game
         self.__full_display()
-        winner: GameEntity = self.__grid.determine_winner()
+        winner: GameEntity = self.__determine_winner()
         print(f'{winner.name} won!')

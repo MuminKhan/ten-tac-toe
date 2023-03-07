@@ -40,13 +40,3 @@ class GameGrid():
 
         self.grid[row][col] = cell_value
         self.sums_grid = self.__compute_sums_of_grid()
-
-    def determine_winner(self) -> int:
-        mean_grid = self.sums_grid / self.grid_size
-        winner = GameEntity.NOBODY.value
-        winner += int(np.any(mean_grid == GameEntity.USER.value))
-        winner -= int(np.any(mean_grid == GameEntity.CPU.value))
-        return GameEntity(winner)
-
-    def is_game_over(self) -> bool:
-        return np.all(self.grid != GameEntity.NOBODY.value) or np.any(np.abs(self.sums_grid) == self.grid_size)
