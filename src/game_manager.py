@@ -75,6 +75,17 @@ class GameManager():
 
         return user_symbol
 
+    def play_again(self):
+        play_again = None
+        while play_again is None:
+            user_answer = self.__get_user_input('Would you like to play again (y/n)? ').lower()
+            if len(user_answer) <= 0:
+                continue
+            play_again = user_answer[0] == 'y' 
+            print(user_answer, play_again)
+
+        return play_again
+
     def __cell_num_to_index(self, cell_number: int) -> Tuple[int, int]:
         grid_size = self.__grid.grid_size
         row, col = divmod(cell_number - 1, grid_size)

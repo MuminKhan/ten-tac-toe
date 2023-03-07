@@ -4,10 +4,13 @@ from game_manager import GameManager
 
 
 def main():
-    grid = GameGrid()
-    cpu = CPU(grid)
-    game = GameManager(grid, cpu)
-    game.run()
+    play_again = True
+    while play_again:
+        grid = GameGrid()
+        cpu = CPU(grid)
+        game = GameManager(grid, cpu)
+        game.run()
+        play_again = game.play_again()
 
 
 if __name__ == '__main__':
@@ -15,4 +18,5 @@ if __name__ == '__main__':
         main()
     except: 
         print('Something went really wrong. Exiting...')
+        raise
 
